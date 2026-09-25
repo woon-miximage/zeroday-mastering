@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MixImage AI Audio Mastering - API Test Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #111827;
+      --card-border: #1f2937;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.2);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 16px; padding-bottom: 24px; border-bottom: 1px solid var(--card-border); margin-bottom: 28px;
+    }
+    .logo-badge {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    h1 { font-size: 26px; font-weight: 700; color: #fff; margin-top: 6px; }
+    .sub { color: var(--text-muted); font-size: 14px; }
+    .env-picker {
+      display: flex; align-items: center; gap: 10px; background: var(--card); padding: 10px 16px;
+      border-radius: 12px; border: 1px solid var(--card-border);
+    }
+    select {
+      background: #1e293b; color: #fff; border: 1px solid #334155; padding: 6px 12px;
+      border-radius: 6px; font-family: inherit; font-size: 13px; outline: none;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .api-list { display: flex; flex-direction: column; gap: 10px; }
+    .api-btn {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
+      background: #1e293b; border: 1px solid #334155; color: #fff; padding: 12px 14px;
+      border-radius: 10px; cursor: pointer; font-family: inherit; text-align: left; transition: all 0.2s;
+    }
+    .api-btn:hover { background: #273549; border-color: var(--accent); transform: translateY(-1px); }
+    .badge-get { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: 'Fira Code', monospace; }
+    .badge-post { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: 'Fira Code', monospace; }
+    .api-path { font-family: 'Fira Code', monospace; font-size: 13px; color: #e2e8f0; }
+    .api-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .response-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 12px; font-weight: 600; background: #1e293b; color: var(--text-muted); }
+    .status-200 { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+    .status-error { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+    pre { background: #090d16; border: 1px solid #1e293b; border-radius: 10px; padding: 16px; font-family: 'Fira Code', monospace; font-size: 12.5px; color: #a5b4fc; overflow-x: auto; max-height: 480px; white-space: pre-wrap; word-break: break-word; }
+    .custom-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--card-border); }
+    .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    input[type="text"], textarea { width: 100%; background: #090d16; border: 1px solid #334155; color: #fff; padding: 8px 12px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 13px; outline: none; }
+    textarea { min-height: 80px; resize: vertical; }
+    .btn-submit { background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 8px 20px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .links-bar { display: flex; gap: 12px; margin-top: 20px; font-size: 13px; }
+    .links-bar a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <div class="logo-badge">⚡ MixImage AWS API Test Bench</div>
+        <h1>คอนโซลทดสอบ API ระบบมาสเตอร์ริ่ง</h1>
+        <p class="sub">คลิกทดสอบ Endpoint ต่างๆ ของ AWS API Gateway / CloudFront ได้แบบเรียลไทม์</p>
+      </div>
+      <div class="env-picker">
+        <label for="baseSelect" style="font-size: 13px; color: var(--text-muted);">โหมดเส้นทาง:</label>
+        <select id="baseSelect" onchange="updateBaseUrl()">
+          <option value="relative">CloudFront /api (ค่าเริ่มต้น แนะนำ)</option>
+          <option value="direct">Direct API Gateway (0tw186fv4g)</option>
+        </select>
+      </div>
+    </header>
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">📡 จุดทดสอบด่วน (Quick Presets)</div>
+        <div class="api-list">
+          <button class="api-btn" onclick="testEndpoint('GET', '/api/cloud-rendering', null, 'เช็คสถานะ EC2 Worker')">
+            <div><div><span class="badge-get">GET</span> <span class="api-path">/api/cloud-rendering</span></div><div class="api-desc">เช็คสถานะเครื่องเรนเดอร์วิดีโอ (EC2 i-080b6ab3081d9860e)</div></div><span>▶</span>
+          </button>
+          <button class="api-btn" onclick="testEndpoint('GET', '/api/projects', null, 'ดึงรายการโปรเจกต์ DynamoDB')">
+            <div><div><span class="badge-get">GET</span> <span class="api-path">/api/projects</span></div><div class="api-desc">ดึงรายการโปรเจกต์เพลงทั้งหมดจาก Amazon DynamoDB</div></div><span>▶</span>
+          </button>
+          <button class="api-btn" onclick="testEndpoint('POST', '/api/audio-intelligence', {title: 'รักตัวเองก่อนใคร', genre: 'Pop / Acoustic', targetLufs: -14.0, analysis: { lufs: -16.5, dynamicRange: 9.8, peakDb: -0.8 }}, 'ขอคำแนะนำมาสเตอริงผ่าน Claude 3 / Bedrock')">
+            <div><div><span class="badge-post">POST</span> <span class="api-path">/api/audio-intelligence</span></div><div class="api-desc">AI Multi-Model วิเคราะห์เพลง & แนะนำ EQ/Comp/Limiter</div></div><span>▶</span>
+          </button>
+          <button class="api-btn" onclick="testEndpoint('POST', '/api/audio-visualizer', {style: 'Neon Dreams', theme: 'Cyberpunk', fps: 60}, 'คำนวณพารามิเตอร์คลื่นเสียง Visualizer')">
+            <div><div><span class="badge-post">POST</span> <span class="api-path">/api/audio-visualizer</span></div><div class="api-desc">คำนวณพารามิเตอร์ Visualizer 60 FPS คลื่นเสียง</div></div><span>▶</span>
+          </button>
+        </div>
+        <div class="links-bar">
+          <a href="/" target="_blank">🌐 เปิดเว็บสตูดิโอหลัก</a>
+          <span>•</span>
+          <a href="https://miximage2026.store" target="_blank">🛍️ เปิดเว็บหน้าร้าน</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="response-header">
+          <div class="card-title" style="margin-bottom: 0;">💻 ผลลัพธ์ (Response Payload)</div>
+          <div id="statusBadge" class="status-badge">พร้อมทดสอบ (Idle)</div>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;" id="requestMeta">กดคลิกปุ่มซ้ายมือเพื่อเริ่มทดสอบทันที</div>
+        <pre id="outputCode">// ผลลัพธ์ JSON จะแสดงที่นี่เมื่อส่งคำขอ...</pre>
+      </div>
+    </div>
+  </div>
+  <script>
+    let currentBase = '';
+    function updateBaseUrl() {
+      const select = document.getElementById('baseSelect');
+      currentBase = (select.value === 'direct') ? 'https://0tw186fv4g.execute-api.us-east-1.amazonaws.com' : '';
+    }
+    async function testEndpoint(method, path, body, desc) {
+      const output = document.getElementById('outputCode');
+      const badge = document.getElementById('statusBadge');
+      const meta = document.getElementById('requestMeta');
+      const targetUrl = currentBase ? (currentBase + path) : path;
+      badge.className = 'status-badge'; badge.textContent = 'กำลังส่งคำขอ... (Fetching)';
+      meta.textContent = `${desc} ➔ [${method}] ${targetUrl}`;
+      output.textContent = '// ส่งข้อมูลไปยัง AWS API Gateway กรุณารอสักครู่...';
+      const startTime = performance.now();
+      try {
+        const options = { method: method, headers: { 'Content-Type': 'application/json' } };
+        if (body && (method === 'POST' || method === 'PUT')) options.body = JSON.stringify(body);
+        const res = await fetch(targetUrl, options);
+        const duration = Math.round(performance.now() - startTime);
+        let data; const text = await res.text();
+        try { data = JSON.parse(text); } catch { data = text; }
+        if (res.ok) { badge.className = 'status-badge status-200'; badge.textContent = `HTTP ${res.status} OK (${duration} ms)`; }
+        else { badge.className = 'status-badge status-error'; badge.textContent = `HTTP ${res.status} ${res.statusText} (${duration} ms)`; }
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        badge.className = 'status-badge status-error'; badge.textContent = 'Error';
+        output.textContent = '// Error: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
