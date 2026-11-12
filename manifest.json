@@ -1,11 +1,11 @@
-{
+﻿{
   "name": "ZeroDay ZFM Studio - Audio Mastering & Downloader",
   "short_name": "ZFM Studio",
   "description": "Professional high-precision audio mastering studio powered by Multi-Model AI Engine with 4-stem separation and integrated media downloader.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#09090B",
-  "theme_color": "#09090B",
+  "background_color": "#17251F",
+  "theme_color": "#17251F",
   "orientation": "any",
   "icons": [
     {
@@ -15,9 +15,9 @@
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-512.jpg",
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
