@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MIX Subtitle Maker – SRT / SBV / LRC</title>
+<style>
+:root{--brand:#3f7a61;--brand2:#4f8f74;--soft:#e6f0ea;--cream:#f6f1e7;--ink:#17251f;--line:#d9e3dc;--amber:#e8963a;--mute:#6b7d73}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font:14px/1.5 system-ui,"Noto Sans Thai","Leelawadee UI",sans-serif}
+header{display:flex;align-items:center;gap:14px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header img{height:34px}header h1{font-size:16px;margin:0}header small{color:var(--mute)}
+header a{margin-left:auto;color:var(--brand);text-decoration:none;font-weight:600}
+main{max-width:1200px;margin:18px auto;padding:0 16px;display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
+h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+textarea{width:100%;height:300px;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;resize:vertical;background:#fcfdfc}
+button,.btn{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+button.alt{background:var(--soft);color:var(--brand)}button.warn{background:var(--amber)}
+button:disabled{opacity:.45;cursor:not-allowed}
+label.opt{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+input[type=number],input[type=text]{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:inherit;width:78px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+table{width:100%;border-collapse:collapse}
+th{font-size:12px;color:var(--mute);text-align:left;padding:4px}
+td{padding:3px 4px;border-top:1px solid var(--line);vertical-align:middle}
+td input.t{width:98px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+td input.x{width:100%;min-width:260px;border:1px solid transparent;border-radius:6px;padding:4px 6px;font:inherit}
+td input.x:focus{border-color:var(--brand2);outline:0}
+tr.cur{background:var(--soft)}tr.sec td{font-size:11px;color:var(--amber);font-weight:700;background:#fffaf2}
+.scroll{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+#status{font-size:12px;color:var(--mute);margin-top:6px}
+audio{width:100%}
+canvas{width:100%;height:56px;background:#f1f6f3;border-radius:10px;display:block}
+.tip{font-size:12px;color:var(--mute)}
+kbd{background:var(--soft);border-radius:4px;padding:0 5px}
+</style>
+</head>
+<body>
+<header>
+  <img src="../assets/brand/mix-logo.png" alt="MIX" />
+  <div><h1>Subtitle Maker</h1><small>วางเนื้อเพลง → ระบบจัดเวลาให้ → ส่งออก SRT / SBV / LRC</small></div>
+  <a href="../">← กลับ ZeroDay</a>
+</header>
+<main>
+  <section class="card">
+    <h2>1 · วางเนื้อเพลง</h2>
+    <textarea id="lyrics" placeholder="วางเนื้อเพลงจาก Suno ได้เลย&#10;[Verse 1: ...] ระบบจะลบให้อัตโนมัติ"></textarea>
+    <div class="row"><input type="file" id="txtfile" accept=".txt" /></div>
+    <label class="opt"><input type="checkbox" id="optTags" checked />ลบแท็ก [Verse: …] [Chorus: …] ทิ้ง</label>
+    <label class="opt"><input type="checkbox" id="optParen" />ตัดบรรทัดประสานในวงเล็บ ( … ) ทิ้ง</label>
+    <label class="opt"><input type="checkbox" id="optGap" checked />เว้นจังหวะระหว่างท่อน</label>
+    <div class="row">ยาวสุดต่อบรรทัด <input type="number" id="maxc" value="42" min="12" max="100" /> ตัวอักษร
+      <span class="tip">(เกินจะแบ่งเป็น 2 ซับ)</span></div>
+    <h2 style="margin-top:14px">2 · เพิ่มไฟล์เสียง</h2>
+    <input type="file" id="audiofile" accept="audio/*" />
+    <canvas id="wave" width="800" height="56"></canvas>
+    <audio id="audio" controls></audio>
+    <div class="row">
+      <button id="btnAuto">⚙ จัดเวลาอัตโนมัติ</button>
+      <button id="btnNoAudio" class="alt">จัดเวลาไม่มีเสียง</button>
+    </div>
+    <div class="row">ความยาวเพลง <input type="text" id="dur" placeholder="mm:ss" /> <span class="tip">(ใช้เมื่อไม่มีไฟล์เสียง)</span></div>
+    <div id="status"></div>
+  </section>
+
+  <section class="card">
+    <h2>3 · ตรวจและแก้เวลา</h2>
+    <div class="row">
+      <button id="btnTap" class="warn" disabled>⏱ ตั้งเวลาบรรทัดนี้ (Space)</button>
+      <button id="btnPrev" class="alt">◀ ย้อน</button>
+      <span class="tip">เปิดเสียง แล้วกด <kbd>Space</kbd> ตอนเริ่มร้องแต่ละบรรทัด ระบบเลื่อนไปบรรทัดถัดไปให้</span>
+    </div>
+    <div class="row">เลื่อนทั้งหมด <input type="number" id="shift" value="0" step="0.1" /> วินาที
+      <button class="alt" id="btnShift">ใช้</button></div>
+    <div class="scroll"><table><thead><tr><th>#</th><th>เริ่ม</th><th>จบ</th><th>ข้อความ</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    <h2 style="margin-top:14px">4 · ดาวน์โหลด</h2>
+    <div class="row">
+      <button data-f="srt">⬇ .SRT</button><button data-f="sbv">⬇ .SBV</button>
+      <button data-f="lrc" class="alt">⬇ .LRC</button><button data-f="txt" class="alt">⬇ .TXT</button>
+      <input type="text" id="fname" value="lyrics" style="width:140px" />
+    </div>
+  </section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+let lines=[];           // {t:text, s:start, e:end, sec:string|null}
+let env=null, envStep=0.02, audioBuf=null, tapIdx=0;
+
+/* ---------- 1. parse lyrics ---------- */
+function parseLyrics(){
+  const raw=$('lyrics').value.replace(/\r/g,'').split('\n');
+  const out=[]; let sec=null, lastSec=null, pendingBreak=false;
+  for(let l of raw){
+    l=l.trim();
+    if(!l){pendingBreak=true;continue}
+    const tag=l.match(/^\[(.*)\]$/);
+    if(tag){ if($('optTags').checked){sec=tag[1].split(':')[0].trim();pendingBreak=true;continue} }
+    if($('optParen').checked && /^[(（].*[)）]$/.test(l)) continue;
+    if(!$('optTags').checked){/* keep tags as lines */}
+    out.push({t:l,sec:sec,brk:pendingBreak&&out.length>0,newSec:(sec!==lastSec?sec:null)});lastSec=sec;
+    pendingBreak=false;
+  }
+  return out;
+}
+const seg=(typeof Intl!=='undefined'&&Intl.Segmenter)?new Intl.Segmenter('th',{granularity:'word'}):null;
+function splitLong(text,max){
+  if(text.length<=max)return [text];
+  const words=seg?[...seg.segment(text)].map(x=>x.segment):text.split(/(\s+)/);
+  let a='',best=0,acc='';
+  const mid=text.length/2;
+  let bestDiff=1e9;
+  for(const w of words){acc+=w;const d=Math.abs(acc.length-mid);if(d<bestDiff&&acc.length>2&&acc.length<text.length-2){bestDiff=d;best=acc.length}}
+  const p1=text.slice(0,best).trim(),p2=text.slice(best).trim();
+  return [...splitLong(p1,max),...splitLong(p2,max)];
+}
+function weight(t){
+  const s=t.replace(/[\s\d\p{P}]/gu,'');
+  if(/[\u0E00-\u0E7F]/.test(s)){ // Thai: count words & chars (consonants ≈ syllables)
+    const w=seg?[...seg.segment(t)].filter(x=>x.isWordLike).length:s.length/3;
+    return Math.max(1, s.replace(/[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g,'').length*0.7+w*0.6);
+  }
+  return Math.max(1,(t.match(/[aeiouy]+/gi)||[]).length+0.4*t.split(/\s+/).length);
+}
+
+/* ---------- 2. audio / envelope ---------- */
+$('audiofile').onchange=async e=>{
+  const f=e.target.files[0]; if(!f)return;
+  $('audio').src=URL.createObjectURL(f);
+  setStatus('กำลังวิเคราะห์เสียง…');
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    audioBuf=await ctx.decodeAudioData(await f.arrayBuffer());
+    computeEnv(); drawWave();
+    $('dur').value=fmtMin(audioBuf.duration);
+    $('fname').value=f.name.replace(/\.[^.]+$/,'');
+    setStatus('วิเคราะห์เสร็จ ความยาว '+fmtMin(audioBuf.duration));
+  }catch(err){setStatus('อ่านไฟล์เสียงไม่ได้: '+err.message)}
+};
+function computeEnv(){
+  const ch=audioBuf.getChannelData(0), sr=audioBuf.sampleRate, n=Math.floor(audioBuf.duration/envStep);
+  const hop=Math.floor(sr*envStep); env=new Float32Array(n);
+  for(let i=0;i<n;i++){let s=0;const o=i*hop;for(let j=0;j<hop;j+=4){const v=ch[o+j]||0;s+=v*v}env[i]=Math.sqrt(s/(hop/4))}
+  // smooth (≈0.2s)
+  const k=5,sm=new Float32Array(n);
+  for(let i=0;i<n;i++){let s=0,c=0;for(let j=-k;j<=k;j++){if(env[i+j]!==undefined){s+=env[i+j];c++}}sm[i]=s/c}
+  env=sm;
+}
+function drawWave(){
+  const c=$('wave'),g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);
+  if(!env)return;const mx=Math.max(...env)||1;g.fillStyle='#4f8f74';
+  for(let x=0;x<c.width;x++){const i=Math.floor(x/c.width*env.length);const h=env[i]/mx*c.height;g.fillRect(x,(c.height-h)/2,1,Math.max(1,h))}
+}
+function vocalRange(dur){
+  if(!env)return [0,dur];
+  const mx=Math.max(...env),th=mx*0.08;
+  let a=0,b=env.length-1;
+  while(a<env.length&&env[a]<th)a++;
+  while(b>0&&env[b]<th)b--;
+  return [Math.max(0,a*envStep-0.2),Math.min(dur,b*envStep+0.5)];
+}
+function snapValley(t,win){ // move boundary to quietest point within ±win seconds
+  if(!env)return t;
+  const c=Math.round(t/envStep),w=Math.round(win/envStep);let best=c,bv=1e9;
+  for(let i=Math.max(0,c-w);i<=Math.min(env.length-1,c+w);i++){
+    const pen=Math.abs(i-c)*envStep*0.0008*Math.max(...[env[c]||0,0.001]); // slight bias to stay put
+    if(env[i]+pen<bv){bv=env[i]+pen;best=i}
+  }
+  return best*envStep;
+}
+
+/* ---------- 3. timing ---------- */
+function build(duration){
+  const parsed=parseLyrics(); if(!parsed.length){setStatus('ยังไม่มีเนื้อเพลง');return false}
+  const max=+$('maxc').value||42, cues=[];
+  parsed.forEach(p=>{
+    const parts=splitLong(p.t,max);
+    parts.forEach((t,i)=>cues.push({t,w:weight(t),brk:i===0&&p.brk&&$('optGap').checked,sec:i===0?p.newSec:null,secPart:p.sec}));
+  });
+  const [vs,ve]=vocalRange(duration);
+  const gapW=cues.reduce((a,c)=>a+c.w,0)/cues.length*1.2; // pause ≈ 1.2 line
+  const total=cues.reduce((a,c)=>a+c.w+(c.brk?gapW:0),0);
+  let t=vs; const span=ve-vs;
+  cues.forEach((c,i)=>{
+    if(c.brk)t+=gapW/total*span;
+    c.s=t; t+=c.w/total*span; c.e=t;
+  });
+  // snap boundaries to quiet points when we have audio
+  if(env){
+    for(let i=0;i<cues.length;i++){
+      const startSnap=snapValley(cues[i].s,0.8);
+      cues[i].s=i===0?cues[i].s:Math.max(cues[i-1].s+0.3,startSnap);
+    }
+    // end = just before next start (or keep gap if section break)
+    for(let i=0;i<cues.length;i++){
+      const nxt=cues[i+1];
+      const naturalEnd=cues[i].e;
+      cues[i].e=nxt?Math.min(naturalEnd,nxt.s-0.05):ve;
+      if(nxt&&nxt.s-cues[i].s<0.4)cues[i].e=nxt.s;
+    }
+  }
+  cues.forEach(c=>{if(c.e-c.s>10)c.e=c.s+10;if(c.e-c.s<0.8)c.e=c.s+0.8});
+  lines=cues.map(c=>({t:c.t,s:c.s,e:c.e,sec:c.sec}));
+  return true;
+}
+$('btnAuto').onclick=()=>{
+  if(!audioBuf){setStatus('อัปโหลดไฟล์เสียงก่อน หรือใช้ปุ่ม "จัดเวลาไม่มีเสียง"');return}
+  if(build(audioBuf.duration)){render();setStatus('จัดเวลาเสร็จ '+lines.length+' ซับ — ลองเล่นแล้วแก้จุดที่เพี้ยน')}
+};
+$('btnNoAudio').onclick=()=>{
+  const d=parseMin($('dur').value);if(!d){setStatus('ใส่ความยาวเพลง เช่น 03:28');return}
+  const keep=env;env=null;if(build(d)){render();setStatus('จัดเวลาแบบประมาณ (ไม่มีเสียง) — แนะนำใช้ปุ่ม Space ตั้งเวลาเอง')}env=keep;
+};
+
+/* ---------- 4. table ---------- */
+function render(){
+  const tb=$('rows');tb.innerHTML='';
+  lines.forEach((l,i)=>{
+    if(l.sec){const r=tb.insertRow();r.className='sec';const c=r.insertCell();c.colSpan=5;c.textContent='▸ '+l.sec}
+    const r=tb.insertRow();r.id='r'+i;
+    r.insertCell().textContent=i+1;
+    const mk=(k)=>{const c=r.insertCell(),inp=document.createElement('input');inp.className='t';inp.value=fmt(l[k],'.');
+      inp.onchange=()=>{const v=parseTime(inp.value);if(v!=null){l[k]=v}inp.value=fmt(l[k],'.')};c.appendChild(inp)};
+    mk('s');mk('e');
+    const c=r.insertCell(),x=document.createElement('input');x.className='x';x.value=l.t;x.onchange=()=>{l.t=x.value};c.appendChild(x);
+    const d=r.insertCell(),b=document.createElement('button');b.textContent='▶';b.className='alt';b.onclick=()=>{$('audio').currentTime=l.s;$('audio').play()};d.appendChild(b);
+    const del=document.createElement('button');del.textContent='✕';del.className='alt';del.onclick=()=>{lines.splice(i,1);render()};d.appendChild(del);
+  });
+  $('btnTap').disabled=!lines.length;
+}
+$('btnShift').onclick=()=>{const s=+$('shift').value||0;lines.forEach(l=>{l.s=Math.max(0,l.s+s);l.e=Math.max(0,l.e+s)});render()};
+$('audio').ontimeupdate=()=>{
+  const t=$('audio').currentTime;
+  document.querySelectorAll('tr.cur').forEach(r=>r.classList.remove('cur'));
+  const i=lines.findIndex(l=>t>=l.s&&t<l.e);if(i>=0){const r=$('r'+i);if(r){r.classList.add('cur')}}
+};
+/* tap-to-sync */
+function tap(){
+  if(!lines.length)return;
+  const a=$('audio');if(tapIdx>=lines.length)tapIdx=0;
+  const t=a.currentTime;lines[tapIdx].s=t;
+  if(tapIdx>0)lines[tapIdx-1].e=Math.max(lines[tapIdx-1].s+0.3,t-0.05);
+  lines[tapIdx].e=Math.max(t+1,lines[tapIdx].e<t?t+2:lines[tapIdx].e);
+  tapIdx++;render();
+  const r=$('r'+Math.min(tapIdx,lines.length-1));if(r)r.scrollIntoView({block:'center'});
+}
+$('btnTap').onclick=tap;
+$('btnPrev').onclick=()=>{tapIdx=Math.max(0,tapIdx-1);const l=lines[tapIdx];if(l){$('audio').currentTime=Math.max(0,l.s-1.5);setStatus('ย้อนไปบรรทัดที่ '+(tapIdx+1))}};
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&lines.length){e.preventDefault();tap()}
+});
+
+/* ---------- 5. export ---------- */
+const p2=(n,w=2)=>String(n).padStart(w,'0');
+function parts(t){t=Math.max(0,t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=Math.floor(t%60),ms=Math.round((t-Math.floor(t))*1000);return ms===1000?parts(Math.floor(t)+1):{h,m,s,ms}}
+function fmt(t,sep=','){const x=parts(t);return `${p2(x.h)}:${p2(x.m)}:${p2(x.s)}${sep}${p2(x.ms,3)}`}
+function fmtMin(t){return p2(Math.floor(t/60))+':'+p2(Math.floor(t%60))}
+function parseMin(v){const m=(v||'').match(/^(\d+):(\d{1,2})$/);return m?(+m[1]*60+ +m[2]):(+v||0)}
+function parseTime(v){const m=v.trim().match(/^(?:(\d+):)?(\d+):(\d+)(?:[.,](\d{1,3}))?$/);if(!m)return null;
+  return (+(m[1]||0))*3600+ +m[2]*60+ +m[3]+ (m[4]?+('0.'+m[4]):0)}
+function exportAs(f){
+  const L=lines.filter(l=>l.t.trim());let out='';
+  if(f==='srt')out=L.map((l,i)=>`${i+1}\n${fmt(l.s)} --> ${fmt(l.e)}\n${l.t}\n`).join('\n');
+  if(f==='sbv')out=L.map(l=>{const a=parts(l.s),b=parts(l.e);return `${a.h}:${p2(a.m)}:${p2(a.s)}.${p2(a.ms,3)},${b.h}:${p2(b.m)}:${p2(b.s)}.${p2(b.ms,3)}\n${l.t}\n`}).join('\n');
+  if(f==='lrc')out=L.map(l=>{const x=parts(l.s);return `[${p2(x.h*60+x.m)}:${p2(x.s)}.${p2(Math.round(x.ms/10)%100)}]${l.t}`}).join('\n')+'\n';
+  if(f==='txt')out=L.map(l=>l.t).join('\n')+'\n';
+  return out;
+}
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{
+  if(!lines.length){setStatus('ยังไม่มีซับให้ดาวน์โหลด');return}
+  // sanity: ensure no overlap / negative
+  for(let i=0;i<lines.length-1;i++)if(lines[i].e>lines[i+1].s)lines[i].e=Math.max(lines[i].s+0.3,lines[i+1].s-0.02);
+  const f=b.dataset.f,blob=new Blob([exportAs(f)],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=($('fname').value||'lyrics')+'.'+f;a.click();
+});
+$('txtfile').onchange=async e=>{const f=e.target.files[0];if(f)$('lyrics').value=await f.text()};
+function setStatus(s){$('status').textContent=s}
+</script>
+</body>
+</html>
