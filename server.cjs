@@ -404,6 +404,78 @@ async function startServer() {
     }
     return res.status(404).json({ error: "File not found" });
   });
+  app.post("/api/gemini/test-key", async (req, res) => {
+    try {
+      const { provider = "gemini", apiKey, model } = req.body;
+      const clientKey = apiKey || req.headers["x-gemini-api-key"] || req.headers["x-bedrock-api-key"] || "";
+      const cleanKey = clientKey.trim();
+      if (!cleanKey) {
+        return res.status(400).json({
+          ok: false,
+          error: "Missing API Key. \u0E01\u0E23\u0E38\u0E13\u0E32\u0E23\u0E30\u0E1A\u0E38 API Key \u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E17\u0E14\u0E2A\u0E2D\u0E1A"
+        });
+      }
+      const startTime = Date.now();
+      if (provider === "bedrock") {
+        const selectedModel = model || "deepseek.v3.2";
+        const bRes = await fetch("https://bedrock-mantle.us-east-1.api.aws/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${cleanKey}`,
+            "OpenAI-Project": "default",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: [{ role: "user", content: "Ping: Respond OK" }],
+            max_tokens: 5,
+            temperature: 0.1
+          })
+        });
+        const latencyMs = Date.now() - startTime;
+        if (bRes.ok) {
+          return res.json({
+            ok: true,
+            provider: "bedrock",
+            model: selectedModel,
+            latencyMs,
+            message: "\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E15\u0E48\u0E2D AWS Bedrock \u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08!"
+          });
+        }
+        const errJson = await bRes.json().catch(() => null);
+        return res.status(bRes.status).json({
+          ok: false,
+          provider: "bedrock",
+          model: selectedModel,
+          latencyMs,
+          error: errJson?.error?.message || `HTTP ${bRes.status}`
+        });
+      } else {
+        const testModel = model || "gemini-3.8-flash";
+        const activeAi = new import_genai.GoogleGenAI({ apiKey: cleanKey });
+        const gRes = await activeAi.models.generateContent({
+          model: testModel,
+          contents: "Ping: Test connection. Respond with OK"
+        });
+        const latencyMs = Date.now() - startTime;
+        if (gRes && gRes.text) {
+          return res.json({
+            ok: true,
+            provider: "gemini",
+            model: testModel,
+            latencyMs,
+            message: "\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E21\u0E15\u0E48\u0E2D Google Gemini \u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08!"
+          });
+        }
+        return res.status(500).json({ ok: false, error: "No response text returned from model." });
+      }
+    } catch (err) {
+      return res.status(500).json({
+        ok: false,
+        error: err?.message || String(err)
+      });
+    }
+  });
   app.post("/api/gemini/analyze", async (req, res) => {
     try {
       const bodyData = req.body.analysis ? req.body.analysis : req.body;
