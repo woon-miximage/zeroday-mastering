@@ -774,12 +774,9 @@ Required JSON format:
           });
           const modelsToTry = [
             "gemini-3.8-flash",
-            "gemini-3.5-flash",
-            "gemini-3.0-flash",
-            "gemini-2.5-flash",
-            "gemini-2.5-pro",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash"
+            "gemini-3.6-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite"
           ];
           let geminiResponse = null;
           for (const modelName of modelsToTry) {
@@ -1011,12 +1008,9 @@ Requirements:
           });
           const modelsToTry = [
             "gemini-3.8-flash",
-            "gemini-3.5-flash",
-            "gemini-3.0-flash",
-            "gemini-2.5-flash",
-            "gemini-2.5-pro",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash"
+            "gemini-3.6-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite"
           ];
           for (const modelName of modelsToTry) {
             try {
@@ -1268,10 +1262,9 @@ ${cleanProvidedLyrics}` : ""}
 Break lines naturally by vocal phrasing (around 2 to 6 seconds per subtitle cue). Ensure endTime > startTime and no overlapping cues.`;
             const audioModels = [
               "gemini-3.8-flash",
-              "gemini-3.5-flash",
-              "gemini-3.0-flash",
-              "gemini-2.5-flash",
-              "gemini-2.5-pro"
+              "gemini-3.6-flash",
+              "gemini-3.5-flash-lite",
+              "gemini-3.1-flash-lite"
             ];
             for (const m of audioModels) {
               try {
@@ -1296,10 +1289,9 @@ Break lines naturally by vocal phrasing (around 2 to 6 seconds per subtitle cue)
 ${cleanProvidedLyrics}`;
             for (const tm of [
               "gemini-3.8-flash",
-              "gemini-3.5-flash",
-              "gemini-3.0-flash",
-              "gemini-2.5-flash",
-              "gemini-2.5-pro"
+              "gemini-3.6-flash",
+              "gemini-3.5-flash-lite",
+              "gemini-3.1-flash-lite"
             ]) {
               try {
                 const response = await activeAi.models.generateContent({
