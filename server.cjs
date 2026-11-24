@@ -30,7 +30,6 @@ var import_promises = require("dns/promises");
 var import_dotenv = __toESM(require("dotenv"), 1);
 var import_genai = require("@google/genai");
 import_dotenv.default.config();
-var SERVER_DIR = typeof __dirname !== "undefined" ? __dirname : process.cwd();
 function safeJsonParse(rawText) {
   if (!rawText || typeof rawText !== "string") return null;
   const trimmed = rawText.trim();
@@ -116,7 +115,7 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3e3;
   app.use(import_express.default.json({ limit: "100mb" }));
   app.use(import_express.default.urlencoded({ limit: "100mb", extended: true }));
-  const PROJECT_DIR = import_fs.default.existsSync(import_path.default.resolve(SERVER_DIR, "download_handler.py")) ? SERVER_DIR : import_path.default.resolve(SERVER_DIR, "..");
+  const PROJECT_DIR = import_fs.default.existsSync(import_path.default.resolve(__dirname, "download_handler.py")) ? __dirname : import_path.default.resolve(__dirname, "..");
   const DOWNLOADS_DIR = import_path.default.resolve(PROJECT_DIR, "downloads");
   if (!import_fs.default.existsSync(DOWNLOADS_DIR)) {
     import_fs.default.mkdirSync(DOWNLOADS_DIR, { recursive: true });
@@ -124,9 +123,9 @@ async function startServer() {
   const getDownloadHandlerPath = () => {
     const candidates = [
       import_path.default.resolve(PROJECT_DIR, "download_handler.py"),
-      import_path.default.resolve(SERVER_DIR, "download_handler.py"),
+      import_path.default.resolve(__dirname, "download_handler.py"),
       import_path.default.resolve(process.cwd(), "download_handler.py"),
-      import_path.default.resolve(SERVER_DIR, "..", "download_handler.py")
+      import_path.default.resolve(__dirname, "..", "download_handler.py")
     ];
     for (const p of candidates) {
       if (import_fs.default.existsSync(p)) return p;
@@ -137,8 +136,8 @@ async function startServer() {
     const candidates = [
       import_path.default.resolve(PROJECT_DIR, "..", "local-server", ".venv", "Scripts", "python.exe"),
       import_path.default.resolve(process.cwd(), "..", "local-server", ".venv", "Scripts", "python.exe"),
-      import_path.default.resolve(SERVER_DIR, "..", "..", "local-server", ".venv", "Scripts", "python.exe"),
-      import_path.default.resolve(SERVER_DIR, "..", "local-server", ".venv", "Scripts", "python.exe"),
+      import_path.default.resolve(__dirname, "..", "..", "local-server", ".venv", "Scripts", "python.exe"),
+      import_path.default.resolve(__dirname, "..", "local-server", ".venv", "Scripts", "python.exe"),
       "python"
     ];
     for (const p of candidates) {
@@ -258,9 +257,9 @@ async function startServer() {
   const getVideoRenderEnginePath = () => {
     const candidates = [
       import_path.default.resolve(PROJECT_DIR, "video_render_engine.py"),
-      import_path.default.resolve(SERVER_DIR, "video_render_engine.py"),
+      import_path.default.resolve(__dirname, "video_render_engine.py"),
       import_path.default.resolve(process.cwd(), "video_render_engine.py"),
-      import_path.default.resolve(SERVER_DIR, "..", "video_render_engine.py")
+      import_path.default.resolve(__dirname, "..", "video_render_engine.py")
     ];
     for (const p of candidates) {
       if (import_fs.default.existsSync(p)) return p;
@@ -844,9 +843,9 @@ Required JSON format:
   const getTranscribeScriptPath = () => {
     const candidates = [
       import_path.default.resolve(PROJECT_DIR, "transcribe_whisper.py"),
-      import_path.default.resolve(SERVER_DIR, "transcribe_whisper.py"),
+      import_path.default.resolve(__dirname, "transcribe_whisper.py"),
       import_path.default.resolve(process.cwd(), "transcribe_whisper.py"),
-      import_path.default.resolve(SERVER_DIR, "..", "transcribe_whisper.py")
+      import_path.default.resolve(__dirname, "..", "transcribe_whisper.py")
     ];
     for (const p of candidates) {
       if (import_fs.default.existsSync(p)) return p;
