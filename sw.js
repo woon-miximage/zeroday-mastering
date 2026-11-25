@@ -1,5 +1,5 @@
 // ZeroDay ZFM Studio Service Worker
-const CACHE_NAME = 'zfm-studio-v1';
+const CACHE_NAME = 'zfm-studio-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
